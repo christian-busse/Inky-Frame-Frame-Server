@@ -69,7 +69,7 @@ def generate_frame():
         ], check=True, capture_output=True)
 
         img = Image.open(original_frame)
-        resized = ImageOps.fit(img, (640, 364), method=Image.LANCZOS)
+        resized = ImageOps.fit(img, (640, 400), method=Image.LANCZOS)
         dithered = hitherdither.ordered.bayer.bayer_dithering(
             resized, inky_palette, [256/4, 256/4, 256/4], order=8
         )

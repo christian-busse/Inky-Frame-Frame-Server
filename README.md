@@ -12,7 +12,7 @@ On startup the server generates an initial frame, then listens on port `5000`. E
 2. Pick a random video file within it
 3. Use `ffprobe` to get the duration, pick a random timestamp
 4. Extract that frame with `ffmpeg`
-5. Scale and centre-crop to **640×364** (aspect-ratio preserved, no stretching)
+5. Scale and centre-crop to **640×400** (aspect-ratio preserved, no stretching)
 6. Dither to the 7-color Inky Frame palette using Bayer ordered dithering
 7. Save both the original and dithered JPEG, plus a JSON sidecar, under `output/YYYY-MM-DD/`
 
