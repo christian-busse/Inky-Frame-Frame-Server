@@ -157,7 +157,7 @@ def serve_frame_display():
       <figcaption>Original</figcaption>
     </figure>
     <figure>
-      <img src="/frame" alt="Dithered">
+      <img src="/frame_dithered" alt="Dithered">
       <figcaption>Dithered</figcaption>
     </figure>
   </div>
@@ -165,6 +165,13 @@ def serve_frame_display():
 </html>"""
     return html
 
+@app.route("/frame_dithered")
+def serve_frame_dithered():
+    with latest_frame_lock:
+        frame = latest_frame
+    if frame is None or not frame.exists():
+        return "No frame available yet.", 503
+    return send_file(frame, mimetype="image/jpeg")
 
 @app.route("/frame")
 def serve_frame():
@@ -178,7 +185,6 @@ def serve_frame():
             generation_in_progress = True
             threading.Thread(target=generate_frame, daemon=True).start()
     return send_file(frame, mimetype="image/jpeg")
-
 
 if __name__ == "__main__":
     output_dir.mkdir(exist_ok=True)
