@@ -1,5 +1,5 @@
 from pathlib import Path
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageEnhance
 import random
 import subprocess
 import json
@@ -16,6 +16,12 @@ input_dir = Path(getenv("INPUT_DIR", "input"))
 output_dir = Path(getenv("OUTPUT_DIR", "output"))
 
 VIDEO_EXTENSIONS = {'.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv', '.webm', '.mpeg', '.mpg'}
+
+# Pre-dither image enhancement. Tune these if results are too dark/bright.
+# autocontrast stretches the histogram; cutoff % of pixels are clipped at each end.
+AUTOCONTRAST_CUTOFF = 0   # 0 = no clipping, higher = more aggressive stretch
+BRIGHTNESS = 1            # 1.0 = unchanged, >1 = brighter
+CONTRAST = 1              # 1.0 = unchanged, >1 = more contrast
 
 app = Flask(__name__)
 latest_frame: Path | None = None
@@ -70,8 +76,11 @@ def generate_frame():
 
         img = Image.open(original_frame)
         resized = ImageOps.fit(img, (640, 400), method=Image.LANCZOS)
-        dithered = hitherdither.ordered.bayer.bayer_dithering(
-            resized, inky_palette, [256/4, 256/4, 256/4], order=8
+        resized = ImageOps.autocontrast(resized, cutoff=AUTOCONTRAST_CUTOFF)
+        resized = ImageEnhance.Brightness(resized).enhance(BRIGHTNESS)
+        resized = ImageEnhance.Contrast(resized).enhance(CONTRAST)
+        dithered = hitherdither.diffusion.error_diffusion_dithering(
+            resized, inky_palette, method="atkinson", order=2
         )
         output_path = date_dir / f"{video_file}_{timestamp:.2f}_dithered.jpg"
         dithered.convert("RGB").save(output_path)
