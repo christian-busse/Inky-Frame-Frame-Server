@@ -28,10 +28,12 @@ latest_frame: Path | None = None
 latest_original: Path | None = None
 latest_frame_lock = threading.Lock()
 latest_frame_info: dict | None = None
+generation_in_progress = False
+generation_lock = threading.Lock()
 
 
 def generate_frame():
-    global latest_frame, latest_original, latest_frame_info
+    global latest_frame, latest_original, latest_frame_info, generation_in_progress
 
     directories = [entry.name for entry in input_dir.iterdir() if entry.is_dir()]
     if not directories:
@@ -102,6 +104,9 @@ def generate_frame():
 
     except Exception as e:
         print(f"Error generating frame: {e}")
+    finally:
+        with generation_lock:
+            generation_in_progress = False
 
 
 @app.route("/frame_info")
@@ -167,7 +172,11 @@ def serve_frame():
         frame = latest_frame
     if frame is None or not frame.exists():
         return "No frame available yet.", 503
-    threading.Thread(target=generate_frame, daemon=True).start()
+    with generation_lock:
+        global generation_in_progress
+        if not generation_in_progress:
+            generation_in_progress = True
+            threading.Thread(target=generate_frame, daemon=True).start()
     return send_file(frame, mimetype="image/jpeg")
 
 
